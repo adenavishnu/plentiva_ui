@@ -18,7 +18,7 @@ Copy `.env.example` to `.env.local` and update:
 
 | Variable | Description |
 |---|---|
-| `NEXT_PUBLIC_PAYMENT_API_URL` | Java backend base URL (default: `http://localhost:8080`) |
+| `NEXT_PUBLIC_URL` | Java backend base URL (default: `http://localhost:8080`) |
 | `NEXT_PUBLIC_RAZORPAY_KEY_ID` | Razorpay public key (for Checkout.js) |
 
 ## Conventions

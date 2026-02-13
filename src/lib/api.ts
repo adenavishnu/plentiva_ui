@@ -8,7 +8,7 @@ import {
 // ── Base URL ─────────────────────────────────────────────────────────────────
 // All requests go through Next.js rewrites → no CORS, no domain switching.
 const PAYMENTS_ENDPOINT = "/api/v1/payments";
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_PAYMENT_API_URL || "http://localhost:8080";
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_URL || "http://localhost:8080";
 const UPLOADS_ENDPOINT = `${BACKEND_API_URL}/api/uploads/file`;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
