@@ -8,6 +8,8 @@ import {
 // ── Base URL ─────────────────────────────────────────────────────────────────
 // All requests go through Next.js rewrites → no CORS, no domain switching.
 const PAYMENTS_ENDPOINT = "/api/v1/payments";
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_PAYMENT_API_URL || "http://localhost:8080";
+const UPLOADS_ENDPOINT = `${BACKEND_API_URL}/api/uploads/file`;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -88,5 +90,39 @@ export const paymentApi = {
       headers: jsonHeaders(),
     });
     return handleResponse<PaymentResponse>(res);
+  },
+};
+
+// ── File Upload API Client ──────────────────────────────────────────────────
+
+export interface UploadResponse {
+  success: boolean;
+  file: {
+    name: string;
+    size: number;
+    type: string;
+    url: string;
+  };
+}
+
+export const uploadApi = {
+  /** POST /api/uploads/file — Upload a file to backend */
+  async uploadFile(file: File): Promise<UploadResponse> {
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    const res = await fetch(UPLOADS_ENDPOINT, {
+      method: "POST",
+      body: formData,
+    });
+    
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({
+        error: res.statusText,
+      }));
+      throw new Error(error.error || "Upload failed");
+    }
+    
+    return res.json();
   },
 };

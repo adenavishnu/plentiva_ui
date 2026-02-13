@@ -12,6 +12,7 @@ export default function Navbar() {
     { href: "/", label: "Products" },
     { href: "/cart", label: "Cart" },
     { href: "/orders", label: "Orders" },
+    { href: "/admin/products", label: "Admin" },
   ];
 
   return (

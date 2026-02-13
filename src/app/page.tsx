@@ -1,9 +1,23 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import ProductCard from "@/components/ProductCard";
-import { products } from "@/lib/products";
+import { getAllProducts } from "@/lib/products";
+import { Product } from "@/types";
 
 export default function HomePage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      const allProducts = getAllProducts();
+      setProducts(allProducts);
+      setIsLoading(false);
+    };
+    loadProducts();
+  }, []);
+
   return (
     <div>
       {/* Hero */}
@@ -17,11 +31,17 @@ export default function HomePage() {
       </div>
 
       {/* Product Grid */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="text-center text-gray-500">Loading products...</div>
+      ) : products.length === 0 ? (
+        <div className="text-center text-gray-500">No products available</div>
+      ) : (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

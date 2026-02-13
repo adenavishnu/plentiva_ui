@@ -1,10 +1,10 @@
 import { Product } from "@/types";
 
 /**
- * Mock product catalogue.
+ * Mock product catalogue with client-side storage support.
  * Replace with a real product-service API call when ready.
  */
-export const products: Product[] = [
+const defaultProducts: Product[] = [
   {
     id: "prod-001",
     name: "Wireless Noise-Cancelling Headphones",
@@ -78,3 +78,71 @@ export const products: Product[] = [
     inStock: false,
   },
 ];
+
+let customProducts: Product[] = [];
+
+// ── Product Management ────────────────────────────────────────────────────────
+
+/**
+ * Get all products (default + custom)
+ */
+export function getAllProducts(): Product[] {
+  if (typeof window === "undefined") {
+    return defaultProducts;
+  }
+  
+  const stored = localStorage.getItem("custom_products");
+  if (stored) {
+    customProducts = JSON.parse(stored);
+  }
+  return [...defaultProducts, ...customProducts];
+}
+
+/**
+ * Add a new product
+ */
+export function addProduct(product: Omit<Product, "id">): Product {
+  if (typeof window === "undefined") {
+    throw new Error("Products can only be added in the browser");
+  }
+
+  const id = `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const newProduct: Product = { ...product, id };
+  
+  const stored = localStorage.getItem("custom_products");
+  customProducts = stored ? JSON.parse(stored) : [];
+  customProducts.push(newProduct);
+  
+  localStorage.setItem("custom_products", JSON.stringify(customProducts));
+  return newProduct;
+}
+
+/**
+ * Get product by ID
+ */
+export function getProductById(id: string): Product | undefined {
+  const allProducts = getAllProducts();
+  return allProducts.find((p) => p.id === id);
+}
+
+/**
+ * Delete a custom product
+ */
+export function deleteProduct(id: string): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  if (id.startsWith("prod-0")) {
+    return false; // Cannot delete default products
+  }
+
+  const stored = localStorage.getItem("custom_products");
+  customProducts = stored ? JSON.parse(stored) : [];
+  customProducts = customProducts.filter((p) => p.id !== id);
+  
+  localStorage.setItem("custom_products", JSON.stringify(customProducts));
+  return true;
+}
+
+export const products = defaultProducts;
