@@ -5,11 +5,10 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  currency: string;
   image: string;
   category: string;
-  rating: number;
-  inStock: boolean;
+  stock: number;
+  gallery?: string[]; // Optional array of additional product images
 }
 
 export interface CartItem {
@@ -21,7 +20,39 @@ export interface Order {
   id: string;
   items: CartItem[];
   totalAmount: number;
-  currency: string;
   status: string;
   createdAt: string;
+}
+
+// ── Product History & Analytics ─────────────────────────────────────────────
+
+export interface StockUpdate {
+  date: string;
+  quantity: number;
+  type: 'initial' | 'add' | 'remove' | 'sold';
+  notes?: string;
+}
+
+export interface ProductHistory {
+  productId: string;
+  initialStock: number;
+  stockUpdates: StockUpdate[];
+  totalAdded: number;
+  totalSold: number;
+  currentStock: number;
+  totalRevenue: number;
+  createdAt: string;
+}
+
+export interface ProductAnalytics {
+  productId: string;
+  productName: string;
+  initialStock: number;
+  totalUpdates: number;
+  totalAdded: number;
+  totalSold: number;
+  currentStock: number;
+  totalRevenue: number;
+  lastUpdated: string;
+  history: StockUpdate[];
 }

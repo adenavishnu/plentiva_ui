@@ -40,7 +40,7 @@ export default function PaymentProviderSelector({ selected, onSelect }: Props) {
             onClick={() => onSelect(p.value)}
             className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all ${
               selected === p.value
-                ? "border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200"
+                ? "border-purple-600 bg-purple-50 ring-2 ring-purple-200"
                 : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
             }`}
           >

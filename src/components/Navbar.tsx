@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { usePathname } from "next/navigation";
 
@@ -19,11 +20,18 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2 text-xl font-bold text-gray-900">
-          <svg className="h-7 w-7 text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
-          </svg>
-          PayStore
+        <Link href="/" className="flex items-center gap-3">
+          <Image
+            src="/logo.png"
+            alt="Plentiva Logo"
+            width={400}
+            height={100}
+            priority
+            className="h-10 w-auto"
+          />
+          <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-2xl font-bold text-transparent">
+            Plentiva
+          </span>
         </Link>
 
         {/* Links */}
@@ -34,13 +42,13 @@ export default function Navbar() {
               href={l.href}
               className={`text-sm font-medium transition-colors ${
                 pathname === l.href
-                  ? "text-indigo-600"
+                  ? "bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent font-semibold"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
               {l.label}
               {l.label === "Cart" && totalItems > 0 && (
-                <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
+                <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-xs font-bold text-white">
                   {totalItems}
                 </span>
               )}

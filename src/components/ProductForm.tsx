@@ -1,29 +1,47 @@
 "use client";
 
 import { Product } from "@/types";
-import { FormEvent, useState, useRef } from "react";
-import { uploadApi } from "@/lib/api";
+import { FormEvent, useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import MediaUploader from "./common/MediaUploader";
 
 interface ProductFormProps {
   onSubmit: (product: Omit<Product, "id">) => void;
   isLoading?: boolean;
+  initialData?: Product;
+  mode?: "create" | "edit";
 }
 
-export default function ProductForm({ onSubmit, isLoading = false }: ProductFormProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    price: "",
-    currency: "INR",
-    category: "Electronics",
-    image: "/products/default.svg",
-    rating: "4.5",
-    inStock: true,
+interface UploadedFile {
+  url: string;
+  name: string;
+  size: number;
+}
+
+export default function ProductForm({ onSubmit, isLoading = false, initialData, mode = "create" }: ProductFormProps) {
+  const { control, watch } = useForm<{
+    thumbnail: UploadedFile[];
+    gallery: UploadedFile[];
+  }>({
+    defaultValues: {
+      thumbnail: initialData?.image ? [{ url: initialData.image, name: "thumbnail", size: 0 }] : [],
+      gallery: initialData?.gallery 
+        ? initialData.gallery.map((url, index) => ({ url, name: `gallery-${index}`, size: 0 }))
+        : [],
+    }
   });
-  const [imagePreview, setImagePreview] = useState<string>("/products/default.svg");
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  
+  const [formData, setFormData] = useState({
+    name: initialData?.name || "",
+    description: initialData?.description || "",
+    price: initialData?.price?.toString() || "",
+    category: initialData?.category || "Electronics",
+    image: initialData?.image || "/products/default.svg",
+    stock: initialData?.stock?.toString() || "0",
+  });
+
+  const thumbnail = watch("thumbnail");
+  const gallery = watch("gallery");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -31,35 +49,6 @@ export default function ProductForm({ onSubmit, isLoading = false }: ProductForm
       ...prev,
       [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
     }));
-  };
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Show preview
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setImagePreview(event.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    // Upload file
-    try {
-      setUploading(true);
-      setUploadError(null);
-      const response = await uploadApi.uploadFile(file);
-      setFormData((prev) => ({
-        ...prev,
-        image: response.file.url,
-      }));
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : "Failed to upload image";
-      setUploadError(errorMsg);
-      console.error("Upload error:", error);
-    } finally {
-      setUploading(false);
-    }
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -70,15 +59,20 @@ export default function ProductForm({ onSubmit, isLoading = false }: ProductForm
       return;
     }
 
+    // Get thumbnail URL from MediaUploader
+    const thumbnailUrl = thumbnail && thumbnail.length > 0 ? thumbnail[0].url : "/products/default.svg";
+    
+    // Get gallery URLs from MediaUploader
+    const galleryUrls = gallery && gallery.length > 0 ? gallery.map(img => img.url) : [];
+
     onSubmit({
       name: formData.name,
       description: formData.description,
       price: parseFloat(formData.price),
-      currency: formData.currency,
       category: formData.category,
-      image: formData.image,
-      rating: parseFloat(formData.rating),
-      inStock: formData.inStock,
+      image: thumbnailUrl,
+      stock: parseInt(formData.stock) || 0,
+      gallery: galleryUrls.length > 0 ? galleryUrls : undefined,
     });
 
     // Reset form
@@ -86,24 +80,20 @@ export default function ProductForm({ onSubmit, isLoading = false }: ProductForm
       name: "",
       description: "",
       price: "",
-      currency: "INR",
       category: "Electronics",
       image: "/products/default.svg",
-      rating: "4.5",
-      inStock: true,
+      stock: "0",
     });
-    setImagePreview("/products/default.svg");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Product Name */}
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-          Product Name *
+        <label htmlFor="name" className="mb-2 flex items-center gap-2 text-base font-bold text-gray-900">
+          <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">●</span>
+          Product Name
+          <span className="text-red-500">*</span>
         </label>
         <input
           id="name"
@@ -112,15 +102,16 @@ export default function ProductForm({ onSubmit, isLoading = false }: ProductForm
           value={formData.name}
           onChange={handleChange}
           placeholder="e.g., Wireless Headphones"
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+          className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder-gray-400 focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-600"
           required
         />
       </div>
 
       {/* Description */}
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-          Description *
+        <label htmlFor="description" className="mb-2 flex items-center gap-2 text-base font-bold text-gray-900">
+          <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">●</span>
+          Description
         </label>
         <textarea
           id="description"
@@ -129,50 +120,34 @@ export default function ProductForm({ onSubmit, isLoading = false }: ProductForm
           onChange={handleChange}
           placeholder="Describe your product..."
           rows={4}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-          required
+          className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder-gray-400 focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-600"
         />
       </div>
 
       {/* Price */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-            Price *
-          </label>
-          <input
-            id="price"
-            name="price"
-            type="number"
-            step="0.01"
-            value={formData.price}
-            onChange={handleChange}
-            placeholder="0.00"
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="currency" className="block text-sm font-medium text-gray-700">
-            Currency
-          </label>
-          <select
-            id="currency"
-            name="currency"
-            value={formData.currency}
-            onChange={handleChange}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-          >
-            <option value="INR">INR</option>
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-          </select>
-        </div>
+      <div>
+        <label htmlFor="price" className="mb-2 flex items-center gap-2 text-base font-bold text-gray-900">
+          <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">●</span>
+          Price (INR)
+          <span className="text-red-500">*</span>
+        </label>
+        <input
+          id="price"
+          name="price"
+          type="number"
+          step="0.01"
+          value={formData.price}
+          onChange={handleChange}
+          placeholder="0.00"
+          className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder-gray-400 focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-600"
+          required
+        />
       </div>
 
       {/* Category */}
       <div>
-        <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="category" className="mb-2 flex items-center gap-2 text-base font-bold text-gray-900">
+          <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">●</span>
           Category
         </label>
         <select
@@ -180,7 +155,7 @@ export default function ProductForm({ onSubmit, isLoading = false }: ProductForm
           name="category"
           value={formData.category}
           onChange={handleChange}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+          className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-600"
         >
           <option value="Electronics">Electronics</option>
           <option value="Furniture">Furniture</option>
@@ -191,85 +166,77 @@ export default function ProductForm({ onSubmit, isLoading = false }: ProductForm
         </select>
       </div>
 
-      {/* Image Upload */}
+      {/* Product Thumbnail */}
       <div>
-        <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
-          Product Image
+        <label className="mb-3 flex items-center gap-2 text-base font-bold text-gray-900">
+          <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">●</span>
+          Product Thumbnail
+          <span className="text-red-500">*</span>
         </label>
-        <div className="space-y-3">
-          {/* Preview */}
-          {imagePreview && (
-            <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-4">
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="max-h-48 max-w-48 rounded object-cover"
-              />
-            </div>
+        <Controller
+          name="thumbnail"
+          control={control}
+          render={({ field }) => (
+            <MediaUploader
+              multiple={false}
+              value={field.value}
+              onChange={field.onChange}
+            />
           )}
-          
-          {/* Upload Error */}
-          {uploadError && (
-            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 border border-red-200">
-              {uploadError}
-            </div>
-          )}
-
-          {/* File Input */}
-          <input
-            ref={fileInputRef}
-            id="image"
-            name="image"
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            onChange={handleFileSelect}
-            disabled={uploading}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-          {uploading && <p className="text-sm text-gray-600">Uploading image...</p>}
-        </div>
+        />
       </div>
 
-      {/* Rating */}
+      {/* Product Gallery */}
       <div>
-        <label htmlFor="rating" className="block text-sm font-medium text-gray-700">
-          Rating (1-5)
+        <label className="mb-3 flex items-center gap-2 text-base font-bold text-gray-900">
+          <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">●</span>
+          Product Gallery
+          <span className="text-sm font-normal text-gray-500">(Multiple Images)</span>
+        </label>
+        <Controller
+          name="gallery"
+          control={control}
+          render={({ field }) => (
+            <MediaUploader
+              multiple={true}
+              value={field.value}
+              onChange={field.onChange}
+            />
+          )}
+        />
+      </div>
+
+      {/* Stock Quantity */}
+      <div>
+        <label htmlFor="stock" className="mb-2 flex items-center gap-2 text-base font-bold text-gray-900">
+          <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">●</span>
+          Stock Quantity
+          <span className="text-red-500">*</span>
         </label>
         <input
-          id="rating"
-          name="rating"
+          id="stock"
+          name="stock"
           type="number"
-          min="1"
-          max="5"
-          step="0.1"
-          value={formData.rating}
+          min="0"
+          step="1"
+          value={formData.stock}
           onChange={handleChange}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+          placeholder="0"
+          className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder-gray-400 focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-600"
+          required
         />
-      </div>
-
-      {/* In Stock */}
-      <div className="flex items-center">
-        <input
-          id="inStock"
-          name="inStock"
-          type="checkbox"
-          checked={formData.inStock}
-          onChange={handleChange}
-          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-600"
-        />
-        <label htmlFor="inStock" className="ml-2 text-sm text-gray-700">
-          In Stock
-        </label>
       </div>
 
       {/* Submit Button */}
       <button
         type="submit"
-        disabled={isLoading || uploading}
-        className="w-full rounded-lg bg-indigo-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled={isLoading}
+        className="w-full rounded-lg bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 px-6 py-2 font-semibold text-white transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isLoading ? "Creating..." : uploading ? "Uploading..." : "Create Product"}
+        {isLoading 
+          ? (mode === "edit" ? "Updating..." : "Creating...")
+          : (mode === "edit" ? "Update Product" : "Create Product")
+        }
       </button>
     </form>
   );

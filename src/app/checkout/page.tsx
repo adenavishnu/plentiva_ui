@@ -32,7 +32,7 @@ export default function CheckoutPage() {
         <p className="text-gray-500">Add items to your cart first.</p>
         <Link
           href="/"
-          className="mt-4 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+          className="mt-4 rounded-lg bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 px-6 py-2.5 text-sm font-medium text-white hover:shadow-lg transition-all"
         >
           Browse Products
         </Link>
@@ -107,7 +107,7 @@ export default function CheckoutPage() {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "",
         amount: amount * 100, // paise
         currency: "INR",
-        name: "PayStore",
+        name: "Plentiva",
         description: "Order Payment",
         order_id: razorpayOrderId,
         handler: () => {
@@ -142,7 +142,7 @@ export default function CheckoutPage() {
           <div className="flex flex-col items-center gap-5 rounded-2xl bg-white p-10 shadow-xl">
             <div className="relative flex h-16 w-16 items-center justify-center">
               <svg
-                className="h-16 w-16 animate-spin text-indigo-600"
+                className="h-16 w-16 animate-spin text-purple-600"
                 viewBox="0 0 24 24"
                 fill="none"
               >
@@ -196,10 +196,7 @@ export default function CheckoutPage() {
                 <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
               </div>
               <span className="text-sm font-semibold text-gray-900">
-                {formatPrice(
-                  item.product.price * item.quantity,
-                  item.product.currency
-                )}
+                {formatPrice(item.product.price * item.quantity)}
               </span>
             </div>
           ))}
@@ -230,7 +227,7 @@ export default function CheckoutPage() {
       <button
         onClick={handlePay}
         disabled={loading || !selectedProvider}
-        className="w-full rounded-lg bg-indigo-600 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-lg bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 py-3.5 text-sm font-semibold text-white transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? (
           <span className="flex items-center justify-center gap-2">

@@ -3,13 +3,14 @@ import {
   PaymentResponse,
   RefundRequest,
   ApiError,
+  Product,
 } from "@/types";
 
-// ── Base URL ─────────────────────────────────────────────────────────────────
+// ── Base URLs ────────────────────────────────────────────────────────────────
 // All requests go through Next.js rewrites → no CORS, no domain switching.
 const PAYMENTS_ENDPOINT = "/api/v1/payments";
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_URL || "http://localhost:8080";
-const UPLOADS_ENDPOINT = `${BACKEND_API_URL}/api/uploads/file`;
+const UPLOADS_ENDPOINT = "/api/uploads/file";
+const PRODUCTS_ENDPOINT = "/api/products";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -97,11 +98,15 @@ export const paymentApi = {
 
 export interface UploadResponse {
   success: boolean;
-  file: {
-    name: string;
-    size: number;
-    type: string;
-    url: string;
+  message: string;
+  data: {
+    id?: string;
+    fileName?: string;
+    fileType?: string;
+    fileSize?: number;
+    s3Url: string;  // The actual file URL from S3
+    s3Key: string;  // The S3 object key
+    uploadStatus?: string;
   };
 }
 
@@ -118,11 +123,159 @@ export const uploadApi = {
     
     if (!res.ok) {
       const error = await res.json().catch(() => ({
-        error: res.statusText,
+        message: res.statusText,
       }));
-      throw new Error(error.error || "Upload failed");
+      throw new Error(error.message || "Upload failed");
     }
     
     return res.json();
   },
+
+  /** DELETE /api/uploads/file — Delete a file from backend */
+  async deleteFile(s3Key: string): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(`/api/uploads/file?s3Key=${encodeURIComponent(s3Key)}`, {
+      method: "DELETE",
+      headers: jsonHeaders(),
+    });
+    
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({
+        message: res.statusText,
+      }));
+      throw new Error(error.message || "Delete failed");
+    }
+    
+    return res.json();
+  },
+
+  /** PUT /api/uploads/:uploadId — Replace an existing file */
+  async updateFile(uploadId: string, file: File): Promise<UploadResponse> {
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    const res = await fetch(`/api/uploads/${uploadId}`, {
+      method: "PUT",
+      body: formData,
+    });
+    
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({
+        message: res.statusText,
+      }));
+      throw new Error(error.message || "Update failed");
+    }
+    
+    return res.json();
+  }
 };
+
+// ── Product API Client ──────────────────────────────────────────────────────
+
+export interface ProductRequest {
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category: string;
+  stock: number;
+  gallery?: string[];
+}
+
+export interface ProductResponse {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category: string;
+  stock: number;
+  gallery?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const productApi = {
+  /** GET /api/products — Get all products */
+  async getAllProducts(): Promise<ProductResponse[]> {
+    const res = await fetch(PRODUCTS_ENDPOINT, {
+      headers: jsonHeaders(),
+    });
+    
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({
+        message: res.statusText,
+      }));
+      throw new Error(error.message || "Failed to fetch products");
+    }
+    
+    return res.json();
+  },
+
+  /** GET /api/products/:id — Get product by ID */
+  async getProductById(id: string): Promise<ProductResponse> {
+    const res = await fetch(`${PRODUCTS_ENDPOINT}/${id}`, {
+      headers: jsonHeaders(),
+    });
+    
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({
+        message: res.statusText,
+      }));
+      throw new Error(error.message || "Failed to fetch product");
+    }
+    
+    return res.json();
+  },
+
+  /** POST /api/products — Create a new product */
+  async createProduct(product: ProductRequest): Promise<ProductResponse> {
+    const res = await fetch(PRODUCTS_ENDPOINT, {
+      method: "POST",
+      headers: jsonHeaders(),
+      body: JSON.stringify(product),
+    });
+    
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({
+        message: res.statusText,
+      }));
+      throw new Error(error.message || "Failed to create product");
+    }
+    
+    return res.json();
+  },
+
+  /** PATCH /api/products/:id — Update a product */
+  async updateProduct(id: string, product: Partial<ProductRequest>): Promise<ProductResponse> {
+    const res = await fetch(`${PRODUCTS_ENDPOINT}/${id}`, {
+      method: "PATCH",
+      headers: jsonHeaders(),
+      body: JSON.stringify(product),
+    });
+    
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({
+        message: res.statusText,
+      }));
+      throw new Error(error.message || "Failed to update product");
+    }
+    
+    return res.json();
+  },
+
+  /** DELETE /api/products/:id — Delete a product */
+  async deleteProduct(id: string): Promise<void> {
+    const res = await fetch(`${PRODUCTS_ENDPOINT}/${id}`, {
+      method: "DELETE",
+      headers: jsonHeaders(),
+    });
+    
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({
+        message: res.statusText,
+      }));
+      throw new Error(error.message || "Failed to delete product");
+    }
+  },
+};
+

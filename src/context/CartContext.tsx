@@ -100,6 +100,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     orders: [],
   });
 
+  // Persist orders to localStorage whenever they change
+  React.useEffect(() => {
+    if (state.orders.length > 0) {
+      localStorage.setItem("cart_orders", JSON.stringify(state.orders));
+    }
+  }, [state.orders]);
+
   const totalItems = state.items.reduce((sum, i) => sum + i.quantity, 0);
   const totalAmount = state.items.reduce(
     (sum, i) => sum + i.product.price * i.quantity,
@@ -126,7 +133,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       id: generateOrderId(),
       items: [...state.items],
       totalAmount,
-      currency: state.items[0]?.product.currency ?? "INR",
       status: "PENDING",
       createdAt: new Date().toISOString(),
     };

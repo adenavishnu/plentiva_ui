@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ProductForm from "@/components/ProductForm";
-import { addProduct } from "@/lib/products";
+import { createProductViaAPI } from "@/lib/products";
 import { Product } from "@/types";
 
 export default function CreateProductPage() {
@@ -18,7 +18,11 @@ export default function CreateProductPage() {
       setIsLoading(true);
       setError(null);
       
-      const newProduct = addProduct(productData);
+      const newProduct = await createProductViaAPI(productData);
+      
+      if (!newProduct) {
+        throw new Error("Failed to create product");
+      }
       
       setSuccess(true);
       console.log("Product created:", newProduct);
@@ -37,7 +41,7 @@ export default function CreateProductPage() {
     <div>
       {/* Header */}
       <div className="mb-8">
-        <Link href="/admin/products" className="text-sm text-indigo-600 hover:text-indigo-700">
+        <Link href="/admin/products" className="text-sm text-purple-600 hover:text-purple-700">
           ← Back to Products
         </Link>
         <h1 className="mt-4 text-3xl font-bold text-gray-900">Create New Product</h1>

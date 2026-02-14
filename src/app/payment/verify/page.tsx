@@ -7,6 +7,7 @@ import { paymentApi } from "@/lib/api";
 import { PaymentResponse, PaymentStatus } from "@/types";
 import StatusBadge from "@/components/StatusBadge";
 import { formatPrice, formatDateTime } from "@/lib/utils";
+import { processCompletedOrder } from "@/lib/products";
 
 function VerifyContent() {
   const searchParams = useSearchParams();
@@ -15,6 +16,7 @@ function VerifyContent() {
   const [payment, setPayment] = useState<PaymentResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [orderProcessed, setOrderProcessed] = useState(false);
 
   useEffect(() => {
     if (!paymentId) {
@@ -91,11 +93,23 @@ function VerifyContent() {
     };
   }, [paymentId]);
 
+  // Process the order when payment is completed
+  useEffect(() => {
+    if (payment?.status === PaymentStatus.COMPLETED && !orderProcessed) {
+      console.log("Payment completed, processing order:", payment.orderId);
+      const success = processCompletedOrder(payment.orderId);
+      if (success) {
+        setOrderProcessed(true);
+        console.log("Order processed successfully");
+      }
+    }
+  }, [payment, orderProcessed]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center gap-4 py-20">
         <svg
-          className="h-10 w-10 animate-spin text-indigo-600"
+          className="h-10 w-10 animate-spin text-purple-600"
           viewBox="0 0 24 24"
           fill="none"
         >
@@ -135,7 +149,7 @@ function VerifyContent() {
         <p className="mt-2 text-gray-500">{error}</p>
         <Link
           href="/"
-          className="mt-6 inline-block rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+          className="mt-6 inline-block rounded-lg bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 px-6 py-2.5 text-sm font-medium text-white hover:shadow-lg transition-all"
         >
           Back to Home
         </Link>
@@ -225,7 +239,7 @@ function VerifyContent() {
         {isSuccess && (
           <Link
             href="/orders"
-            className="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+            className="rounded-lg bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 px-6 py-2.5 text-sm font-medium text-white hover:shadow-lg transition-all"
           >
             View Orders
           </Link>
@@ -233,7 +247,7 @@ function VerifyContent() {
         {(isFailed || isCancelled) && (
           <Link
             href="/checkout"
-            className="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+            className="rounded-lg bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 px-6 py-2.5 text-sm font-medium text-white hover:shadow-lg transition-all"
           >
             Try Again
           </Link>
@@ -241,7 +255,7 @@ function VerifyContent() {
         {isPending && (
           <button
             onClick={() => window.location.reload()}
-            className="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+            className="rounded-lg bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 px-6 py-2.5 text-sm font-medium text-white hover:shadow-lg transition-all"
           >
             Refresh Status
           </button>

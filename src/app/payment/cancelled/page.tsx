@@ -15,7 +15,7 @@ export default function CancelledPage() {
       <div className="mt-8 flex justify-center gap-4">
         <Link
           href="/checkout"
-          className="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+          className="rounded-lg bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 px-6 py-2.5 text-sm font-medium text-white hover:shadow-lg transition-all"
         >
           Try Again
         </Link>

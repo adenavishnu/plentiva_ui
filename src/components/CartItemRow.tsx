@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { CartItem as CartItemType } from "@/types";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/utils";
@@ -9,16 +10,22 @@ export default function CartItemRow({ item }: { item: CartItemType }) {
 
   return (
     <div className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4">
-      {/* Icon */}
-      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 text-2xl">
-        {item.product.category === "Electronics" ? "🔌" : "🪑"}
+      {/* Product Image */}
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+        <Image
+          src={item.product.image}
+          alt={item.product.name}
+          fill
+          className="object-cover"
+          sizes="64px"
+        />
       </div>
 
       {/* Details */}
       <div className="flex-1">
         <h4 className="font-medium text-gray-900">{item.product.name}</h4>
         <p className="text-sm text-gray-500">
-          {formatPrice(item.product.price, item.product.currency)} each
+          {formatPrice(item.product.price)} each
         </p>
       </div>
 
@@ -41,7 +48,7 @@ export default function CartItemRow({ item }: { item: CartItemType }) {
 
       {/* Subtotal */}
       <span className="w-24 text-right font-semibold text-gray-900">
-        {formatPrice(item.product.price * item.quantity, item.product.currency)}
+        {formatPrice(item.product.price * item.quantity)}
       </span>
 
       {/* Remove */}

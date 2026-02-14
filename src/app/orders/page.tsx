@@ -42,7 +42,7 @@ function OrdersContent() {
         </p>
         <Link
           href="/"
-          className="mt-4 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+          className="mt-4 rounded-lg bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 px-6 py-2.5 text-sm font-medium text-white hover:shadow-lg transition-all"
         >
           Browse Products
         </Link>
@@ -77,7 +77,7 @@ function OrdersContent() {
               <div>
                 <p className="text-xs text-gray-500">Total</p>
                 <p className="text-sm font-bold text-gray-900">
-                  {formatPrice(order.totalAmount, order.currency)}
+                  {formatPrice(order.totalAmount)}
                 </p>
               </div>
               <StatusBadge status={order.status} />
@@ -99,10 +99,7 @@ function OrdersContent() {
                     </p>
                   </div>
                   <span className="font-semibold text-gray-900">
-                    {formatPrice(
-                      item.product.price * item.quantity,
-                      item.product.currency
-                    )}
+                    {formatPrice(item.product.price * item.quantity)}
                   </span>
                 </div>
               ))}
@@ -112,7 +109,7 @@ function OrdersContent() {
             <div className="border-t border-gray-100 px-6 py-4">
               <button
                 onClick={() => fetchPayments(order.id)}
-                className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
+                className="text-sm font-medium text-purple-600 hover:text-purple-800"
               >
                 {payments[order.id]
                   ? "Payment Details ↓"
