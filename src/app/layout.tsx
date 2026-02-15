@@ -16,10 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Plentiva — E-Commerce Payment Frontend",
-  description: "Next.js frontend for a Java payment microservice with PayPal, Razorpay & PhonePe",
-  icons: {
-    icon: "/logo.png",
-  },
+  description: "Next.js frontend for a Java microservice-based e-commerce application",
 };
 
 export default function RootLayout({
