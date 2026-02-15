@@ -18,18 +18,11 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
+    const gatewayUrl = process.env.NEXT_PUBLIC_API_GATEWAY_URL ?? "http://localhost:8762";
     return [
       {
-        source: "/api/uploads/:path*",
-        destination: `${process.env.NEXT_PUBLIC_UPLOAD_URL ?? "http://localhost:8081"}/api/uploads/:path*`,
-      },
-      {
-        source: "/api/products/:path*",
-        destination: `${process.env.NEXT_PUBLIC_PRODUCT_URL ?? "http://localhost:8082"}/api/products/:path*`,
-      },
-      {
-        source: "/api/v1/payments/:path*",
-        destination: `${process.env.NEXT_PUBLIC_PAYMENT_URL ?? "http://localhost:8080"}/api/v1/payments/:path*`,
+        source: "/api/:path*",
+        destination: `${gatewayUrl}/api/:path*`,
       },
     ];
   },
