@@ -14,6 +14,8 @@ import BarChartIcon from "@mui/icons-material/BarChart";
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import SortIcon from "@mui/icons-material/Sort";
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchCategories } from '@/store/categoriesSlice';
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -28,6 +30,9 @@ export default function AdminProductsPage() {
   const [stockFilter, setStockFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("name-asc");
 
+  const dispatch = useAppDispatch();
+  const { items: categoriesList } = useAppSelector(state => state.categories);
+
   useEffect(() => {
     const loadProducts = async () => {
       setIsLoading(true);
@@ -36,13 +41,14 @@ export default function AdminProductsPage() {
       setIsLoading(false);
     };
     loadProducts();
-  }, []);
+    // @ts-expect-error: Redux thunk type mismatch, safe to ignore for dispatching async thunk
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
-  // Get unique categories
+  // Use Redux categories for dropdown
   const categories = useMemo(() => {
-    const cats = Array.from(new Set(products.map(p => p.category)));
-    return cats.sort();
-  }, [products]);
+    return categoriesList.map(c => c.name).sort();
+  }, [categoriesList]);
 
   // Filtered and sorted products
   const filteredProducts = useMemo(() => {
@@ -141,19 +147,29 @@ export default function AdminProductsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Manage Products</h1>
           <p className="mt-1 text-gray-600">Create, edit, and manage your product catalogue</p>
         </div>
-        <Link
-          href="/admin/products/create"
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 px-6 py-2 font-semibold text-white transition-all hover:shadow-lg"
-        >
-          <AddIcon fontSize="small" />
-          Add Product
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            href="/admin/products/create"
+            className="inline-flex items-center gap-2 rounded-lg bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 px-6 py-2 font-semibold text-white transition-all hover:shadow-lg"
+          >
+            <AddIcon fontSize="small" />
+            Add Product
+          </Link>
+          <Link
+            href="/admin/categories"
+            className="inline-flex items-center gap-2 rounded-lg bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 px-6 py-2 font-semibold text-white transition-all hover:shadow-lg"
+          >
+            <AddIcon fontSize="small" />
+            Add Category
+          </Link>
+        </div>
       </div>
+      
 
       {/* Search & Filters */}
       <div className="mb-6 space-y-4">
@@ -172,7 +188,7 @@ export default function AdminProductsPage() {
         {/* Filters */}
         <div className="flex flex-wrap gap-4">
           {/* Category Filter */}
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-50">
             <label htmlFor="filter-category" className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
               <FilterListIcon fontSize="small" />
               Category
@@ -191,7 +207,7 @@ export default function AdminProductsPage() {
           </div>
 
           {/* Stock Filter */}
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-50">
             <label htmlFor="filter-stock" className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
               <FilterListIcon fontSize="small" />
               Stock Status
@@ -210,7 +226,7 @@ export default function AdminProductsPage() {
           </div>
 
           {/* Sort By */}
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-50">
             <label htmlFor="sort-by" className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
               <SortIcon fontSize="small" />
               Sort By

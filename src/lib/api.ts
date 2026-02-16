@@ -10,7 +10,7 @@ import {
 // All requests go through Next.js rewrites → no CORS, no domain switching.
 const PAYMENTS_ENDPOINT = "/api/v1/payments";
 const UPLOADS_ENDPOINT = "/api/uploads/file";
-const PRODUCTS_ENDPOINT = "/api/products";
+const PRODUCTS_ENDPOINT = "/api/catalog/products";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -171,6 +171,103 @@ export const uploadApi = {
 
 // ── Product API Client ──────────────────────────────────────────────────────
 
+// ── Category API Client ─────────────────────────────────────────────────────
+import { Category } from "@/types";
+
+const CATEGORIES_ENDPOINT = "/api/catalog/categories";
+
+export interface CategoryRequest {
+  name: string;
+  description?: string;
+  slug: string;
+  imageUrl?: string;
+  isActive?: boolean;
+  displayOrder?: number;
+  parentId?: string;
+}
+
+export interface CategoryResponse extends Category {
+  createdAt?: string;
+  updatedAt?: string;
+  dateCreated?: string;
+}
+
+export const categoryApi = {
+  /** GET /api/catalog/categories — Get all categories */
+  async getAllCategories(): Promise<CategoryResponse[]> {
+    const res = await fetch(CATEGORIES_ENDPOINT, {
+      headers: jsonHeaders(),
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({
+        message: res.statusText,
+      }));
+      throw new Error(error.message || "Failed to fetch categories");
+    }
+    return res.json();
+  },
+
+  /** GET /api/catalog/categories/:id — Get category by ID */
+  async getCategoryById(id: string): Promise<CategoryResponse> {
+    const res = await fetch(`${CATEGORIES_ENDPOINT}/${id}`, {
+      headers: jsonHeaders(),
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({
+        message: res.statusText,
+      }));
+      throw new Error(error.message || "Failed to fetch category");
+    }
+    return res.json();
+  },
+
+  /** POST /api/catalog/categories — Create a new category */
+  async createCategory(category: CategoryRequest): Promise<CategoryResponse> {
+    const res = await fetch(CATEGORIES_ENDPOINT, {
+      method: "POST",
+      headers: jsonHeaders(),
+      body: JSON.stringify(category),
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({
+        message: res.statusText,
+      }));
+      throw new Error(error.message || "Failed to create category");
+    }
+    return res.json();
+  },
+
+  /** PUT /api/catalog/categories/:id — Update a category */
+  async updateCategory(id: string, category: CategoryRequest): Promise<CategoryResponse> {
+    const res = await fetch(`${CATEGORIES_ENDPOINT}/${id}`, {
+      method: "PUT",
+      headers: jsonHeaders(),
+      body: JSON.stringify(category),
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({
+        message: res.statusText,
+      }));
+      throw new Error(error.message || "Failed to update category");
+    }
+    return res.json();
+  },
+
+  /** DELETE /api/catalog/categories/:id — Delete a category */
+  async deleteCategory(id: string): Promise<void> {
+    const res = await fetch(`${CATEGORIES_ENDPOINT}/${id}`, {
+      method: "DELETE",
+      headers: jsonHeaders(),
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({
+        message: res.statusText,
+      }));
+      throw new Error(error.message || "Failed to delete category");
+    }
+  },
+};
+
 export interface ProductRequest {
   name: string;
   description: string;
@@ -195,87 +292,92 @@ export interface ProductResponse {
 }
 
 export const productApi = {
-  /** GET /api/products — Get all products */
+  /** GET /api/catalog/products — Get all products */
   async getAllProducts(): Promise<ProductResponse[]> {
     const res = await fetch(PRODUCTS_ENDPOINT, {
       headers: jsonHeaders(),
     });
-    
     if (!res.ok) {
       const error = await res.json().catch(() => ({
         message: res.statusText,
       }));
       throw new Error(error.message || "Failed to fetch products");
     }
-    
     return res.json();
   },
 
-  /** GET /api/products/:id — Get product by ID */
+  /** GET /api/catalog/products/:id — Get product by ID */
   async getProductById(id: string): Promise<ProductResponse> {
     const res = await fetch(`${PRODUCTS_ENDPOINT}/${id}`, {
       headers: jsonHeaders(),
     });
-    
     if (!res.ok) {
       const error = await res.json().catch(() => ({
         message: res.statusText,
       }));
       throw new Error(error.message || "Failed to fetch product");
     }
-    
     return res.json();
   },
 
-  /** POST /api/products — Create a new product */
+  /** POST /api/catalog/products — Create a new product */
   async createProduct(product: ProductRequest): Promise<ProductResponse> {
     const res = await fetch(PRODUCTS_ENDPOINT, {
       method: "POST",
       headers: jsonHeaders(),
       body: JSON.stringify(product),
     });
-    
     if (!res.ok) {
       const error = await res.json().catch(() => ({
         message: res.statusText,
       }));
       throw new Error(error.message || "Failed to create product");
     }
-    
     return res.json();
   },
 
-  /** PATCH /api/products/:id — Update a product */
-  async updateProduct(id: string, product: Partial<ProductRequest>): Promise<ProductResponse> {
+  /** PUT /api/catalog/products/:id — Update a product */
+  async updateProduct(id: string, product: ProductRequest): Promise<ProductResponse> {
     const res = await fetch(`${PRODUCTS_ENDPOINT}/${id}`, {
-      method: "PATCH",
+      method: "PUT",
       headers: jsonHeaders(),
       body: JSON.stringify(product),
     });
-    
     if (!res.ok) {
       const error = await res.json().catch(() => ({
         message: res.statusText,
       }));
       throw new Error(error.message || "Failed to update product");
     }
-    
     return res.json();
   },
 
-  /** DELETE /api/products/:id — Delete a product */
+  /** DELETE /api/catalog/products/:id — Delete a product */
   async deleteProduct(id: string): Promise<void> {
     const res = await fetch(`${PRODUCTS_ENDPOINT}/${id}`, {
       method: "DELETE",
       headers: jsonHeaders(),
     });
-    
     if (!res.ok) {
       const error = await res.json().catch(() => ({
         message: res.statusText,
       }));
       throw new Error(error.message || "Failed to delete product");
     }
+  },
+
+  /** GET /api/catalog/products/category/:categoryId — Get products by category */
+  async getProductsByCategory(categoryId: string): Promise<ProductResponse[]> {
+    const res = await fetch(`${PRODUCTS_ENDPOINT}/category/${categoryId}`, {
+      headers: jsonHeaders(),
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({
+        message: res.statusText,
+      }));
+      throw new Error(error.message || "Failed to fetch products by category");
+    }
+    return res.json();
   },
 };
 
