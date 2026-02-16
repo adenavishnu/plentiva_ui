@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchCategories } from '@/store/categoriesSlice';
 import ProductCard from "@/components/ProductCard";
 import { getAllProductsFromAPI } from "@/lib/products";
 import { Product } from "@/types";
@@ -11,6 +13,8 @@ import SortIcon from "@mui/icons-material/Sort";
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useAppDispatch();
+  const { items: categoriesList } = useAppSelector(state => state.categories);
   
   // Filter & Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,13 +30,14 @@ export default function HomePage() {
       setIsLoading(false);
     };
     loadProducts();
-  }, []);
+    // @ts-expect-error
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
-  // Get unique categories
+  // Use Redux categories
   const categories = useMemo(() => {
-    const cats = Array.from(new Set(products.map(p => p.category)));
-    return cats.sort();
-  }, [products]);
+    return categoriesList.map(c => c.name).sort();
+  }, [categoriesList]);
 
   // Filtered and sorted products
   const filteredProducts = useMemo(() => {
@@ -109,7 +114,7 @@ export default function HomePage() {
       {/* Hero */}
       <div className="mb-10 text-center">
         <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-          Welcome to <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Plentiva</span>
+          Welcome to <span className="bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Plentiva</span>
         </h1>
         <p className="mt-3 text-lg text-gray-500">
           Browse products and pay seamlessly via PayPal, Razorpay, or PhonePe

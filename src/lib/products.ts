@@ -89,7 +89,20 @@ export async function createProductViaAPI(product: Omit<Product, "id">): Promise
  */
 export async function updateProductViaAPI(id: string, updates: Partial<Omit<Product, "id">>): Promise<boolean> {
   try {
-    await productApi.updateProduct(id, updates);
+    // Fetch the existing product first to ensure all fields are present
+    const allProducts = await getAllProductsFromAPI();
+    const existing = allProducts.find(p => p.id === id);
+    if (!existing) throw new Error("Product not found");
+    const request: ProductRequest = {
+      name: updates.name ?? existing.name,
+      description: updates.description ?? existing.description,
+      price: updates.price ?? existing.price,
+      image: updates.image ?? existing.image,
+      category: updates.category ?? existing.category,
+      stock: updates.stock ?? existing.stock,
+      gallery: updates.gallery ?? existing.gallery,
+    };
+    await productApi.updateProduct(id, request);
     return true;
   } catch (error) {
     console.error("Failed to update product via API:", error);
