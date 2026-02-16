@@ -26,14 +26,20 @@ type MediaUploaderProps = {
   value?: FileType[];
   onChange?: (files: FileType[]) => void;
   accept?: string;
+  resetKey?: number;
 };
 
 export default function MediaUploader({
   multiple = false,
   value = [],
   onChange,
+  resetKey,
 }: MediaUploaderProps) {
   const [files, setFiles] = useState<FileType[]>(value);
+  // Reset files when resetKey changes
+  React.useEffect(() => {
+    setFiles(value);
+  }, [resetKey]);
   const [uploading, setUploading] = useState(false);
   const fileInputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({});
 

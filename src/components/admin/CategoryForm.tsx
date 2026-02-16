@@ -22,6 +22,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onSuccess, parentCategories
     const [form, setForm] = useState<CategoryRequest>(initialState);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [resetKey, setResetKey] = useState(0);
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -53,6 +54,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onSuccess, parentCategories
         try {
             const created = await categoryApi.createCategory(form);
             setForm(initialState);
+            setResetKey((k) => k + 1); // Reset MediaUploader
             if (onSuccess) onSuccess(created);
         } catch (err) {
             const errorMsg = (err as Error)?.message || "Failed to create category";
@@ -128,6 +130,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onSuccess, parentCategories
                 <MediaUploader
                     value={form.imageUrl ? [{ url: form.imageUrl }] : []}
                     onChange={handleImageUpload}
+                    resetKey={resetKey}
                 />
             </div>
             <div>

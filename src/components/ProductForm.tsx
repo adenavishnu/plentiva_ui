@@ -1,7 +1,9 @@
 "use client";
 
 import { Product } from "@/types";
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { fetchCategories } from '@/store/categoriesSlice';
 import { useForm, Controller } from "react-hook-form";
 import MediaUploader from "./common/MediaUploader";
 
@@ -35,10 +37,20 @@ export default function ProductForm({ onSubmit, isLoading = false, initialData, 
     name: initialData?.name || "",
     description: initialData?.description || "",
     price: initialData?.price?.toString() || "",
-    category: initialData?.category || "Electronics",
+    category: initialData?.category || "",
     image: initialData?.image || "/products/default.svg",
     stock: initialData?.stock?.toString() || "0",
   });
+
+  const dispatch = useAppDispatch();
+  const { items: categories, loading: categoriesLoading } = useAppSelector(state => state.categories);
+
+  useEffect(() => {
+    if (!categories || categories.length === 0) {
+      // @ts-expect-error: Redux thunk type mismatch, safe to ignore for dispatching async thunk
+      dispatch(fetchCategories());
+    }
+  }, [dispatch, categories]);
 
   const thumbnail = watch("thumbnail");
   const gallery = watch("gallery");
@@ -80,7 +92,7 @@ export default function ProductForm({ onSubmit, isLoading = false, initialData, 
       name: "",
       description: "",
       price: "",
-      category: "Electronics",
+      category: categories && categories.length > 0 ? categories[0].name : "",
       image: "/products/default.svg",
       stock: "0",
     });
@@ -156,13 +168,14 @@ export default function ProductForm({ onSubmit, isLoading = false, initialData, 
           value={formData.category}
           onChange={handleChange}
           className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-600"
+          required
         >
-          <option value="Electronics">Electronics</option>
-          <option value="Furniture">Furniture</option>
-          <option value="Clothing">Clothing</option>
-          <option value="Books">Books</option>
-          <option value="Accessories">Accessories</option>
-          <option value="Other">Other</option>
+          <option value="" disabled>
+            {categoriesLoading ? "Loading..." : "Select a category"}
+          </option>
+          {categories && categories.map((cat) => (
+            <option key={cat.id} value={cat.name}>{cat.name}</option>
+          ))}
         </select>
       </div>
 
