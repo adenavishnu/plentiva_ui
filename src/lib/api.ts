@@ -277,18 +277,30 @@ export interface ProductRequest {
   stock: number;
   gallery?: string[];
 }
+export interface ImageRef {
+  imageId: string;
+  url: string;
+}
 
 export interface ProductResponse {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  category: string;
-  stock: number;
-  gallery?: string[];
-  createdAt?: string;
-  updatedAt?: string;
+   category: {
+        dateCreated: string,
+        description: string,
+        displayOrder: number,
+        id: string,
+        imageUrl: string,
+        isActive: boolean,
+        name: string,
+        parentId: string | null,
+        slug: string
+    },
+    description: string,
+    id: string,
+    price: number,
+    productGallery: ImageRef[]|null,
+    productName: string,
+    quantity: number,
+    thumbnail: ImageRef
 }
 
 export const productApi = {

@@ -1,10 +1,9 @@
 import { Product, ProductHistory, StockUpdate, ProductAnalytics } from "@/types";
-import { productApi, ProductRequest } from "./api";
+import { productApi, ProductResponse, ImageRef } from "./api";
 
 // ── Configuration ────────────────────────────────────────────────────────────
 
-// Set to true to use backend API, false for localStorage
-const USE_BACKEND_API = process.env.NEXT_PUBLIC_USE_PRODUCT_API === "true";
+// (No longer used) const USE_BACKEND_API = process.env.NEXT_PUBLIC_USE_PRODUCT_API === "true";
 
 // ── Backend API Functions ───────────────────────────────────────────────────
 
@@ -13,18 +12,18 @@ const USE_BACKEND_API = process.env.NEXT_PUBLIC_USE_PRODUCT_API === "true";
  */
 export async function getAllProductsFromAPI(): Promise<Product[]> {
   try {
-    const products = await productApi.getAllProducts();
-    return products.map((p: any) => ({
+    const products: ProductResponse[] = await productApi.getAllProducts();
+    return products.map((p) => ({
       id: p.id,
-      name: p.productName ?? p.name,
+      name: p.productName,
       description: p.description,
       price: p.price,
-      image: p.thumbnail?.url ?? p.image,
-      category: p.category?.name ?? p.category ?? p.categoryId,
-      stock: p.quantity ?? p.stock,
+      image: p.thumbnail?.url,
+      category: p.category?.name ?? p.category?.id ?? "",
+      stock: p.quantity,
       gallery: Array.isArray(p.productGallery)
-        ? p.productGallery.map((img: any) => img.url)
-        : p.gallery,
+        ? p.productGallery.map((img: ImageRef) => img.url)
+        : [],
     }));
   } catch (error) {
     console.error("Failed to fetch products from API:", error);
@@ -37,18 +36,18 @@ export async function getAllProductsFromAPI(): Promise<Product[]> {
  */
 export async function getProductByIdFromAPI(id: string): Promise<Product | null> {
   try {
-    const p = await productApi.getProductById(id);
+    const p: ProductResponse = await productApi.getProductById(id);
     return {
       id: p.id,
-      name: p.productName ?? p.name,
+      name: p.productName,
       description: p.description,
       price: p.price,
-      image: p.thumbnail?.url ?? p.image,
-      category: p.category?.name ?? p.category ?? p.categoryId,
-      stock: p.quantity ?? p.stock,
+      image: p.thumbnail?.url,
+      category: p.category?.name ?? p.category?.id ?? "",
+      stock: p.quantity,
       gallery: Array.isArray(p.productGallery)
-        ? p.productGallery.map((img: any) => img.url)
-        : p.gallery,
+        ? p.productGallery.map((img: ImageRef) => img.url)
+        : [],
     };
   } catch (error) {
     console.error("Failed to fetch product from API:", error);
@@ -59,17 +58,26 @@ export async function getProductByIdFromAPI(id: string): Promise<Product | null>
 /**
  * Create a product via backend API
  */
-export async function createProductViaAPI(product: any): Promise<any | null> {
+export async function createProductViaAPI(product: Omit<Product, "id">): Promise<ProductResponse | null> {
   try {
     // Build payload matching backend DTO
     const request = {
-      productName: product.productName || product.name,
+      name: product.name,
+      productName: product.name, // for backward compatibility if backend expects both
       price: product.price,
-      categoryId: product.categoryId || product.category?.id || product.category,
-      quantity: product.quantity || product.stock,
+      category: typeof product.category === "object" && product.category !== null
+        ? (product.category as { id: string }).id
+        : product.category,
+      categoryId: typeof product.category === "object" && product.category !== null
+        ? (product.category as { id: string }).id
+        : product.category,
+      stock: product.stock,
+      quantity: product.stock, // for backward compatibility if backend expects both
       description: product.description,
-      thumbnail: product.thumbnail || (product.image ? { url: product.image } : undefined),
-      productGallery: product.productGallery || (product.gallery ? product.gallery.map((url: string) => ({ url })) : undefined),
+      image: product.image,
+      thumbnail: product.image ? { url: product.image } : undefined,
+      gallery: product.gallery ? product.gallery : [],
+      productGallery: product.gallery ? product.gallery.map((url) => ({ url })) : [],
     };
     const created = await productApi.createProduct(request);
     return created;
@@ -82,20 +90,37 @@ export async function createProductViaAPI(product: any): Promise<any | null> {
 /**
  * Update a product via backend API
  */
-export async function updateProductViaAPI(id: string, updates: any): Promise<boolean> {
+export async function updateProductViaAPI(id: string, updates: Partial<Omit<Product, "id">>): Promise<boolean> {
   try {
     // Fetch the existing product first to ensure all fields are present
     const allProducts = await getAllProductsFromAPI();
     const existing = allProducts.find(p => p.id === id);
     if (!existing) throw new Error("Product not found");
     const request = {
-      productName: updates.productName ?? updates.name ?? existing.name,
+      name: updates.name ?? existing.name,
+      productName: updates.name ?? existing.name,
       price: updates.price ?? existing.price,
-      categoryId: updates.categoryId ?? updates.category?.id ?? existing.category?.id ?? existing.category,
-      quantity: updates.quantity ?? updates.stock ?? existing.stock,
+      category: (typeof (updates.category ?? existing.category) === "object" && (updates.category ?? existing.category) !== null)
+        ? ((updates.category ?? existing.category) as unknown as { id: string }).id
+        : (updates.category ?? existing.category),
+      categoryId: (typeof (updates.category ?? existing.category) === "object" && (updates.category ?? existing.category) !== null)
+        ? ((updates.category ?? existing.category) as unknown as { id: string }).id
+        : (updates.category ?? existing.category),
+      stock: updates.stock ?? existing.stock,
+      quantity: updates.stock ?? existing.stock,
       description: updates.description ?? existing.description,
-      thumbnail: updates.thumbnail || (updates.image ? { url: updates.image } : existing.image ? { url: existing.image } : undefined),
-      productGallery: updates.productGallery || (updates.gallery ? updates.gallery.map((url: string) => ({ url })) : existing.gallery ? existing.gallery.map((url: string) => ({ url })) : undefined),
+      image: updates.image ?? existing.image,
+      thumbnail: updates.image
+        ? { url: updates.image }
+        : existing.image
+        ? { url: existing.image }
+        : undefined,
+      gallery: updates.gallery ?? existing.gallery ?? [],
+      productGallery: updates.gallery
+        ? updates.gallery.map((url) => ({ url }))
+        : existing.gallery
+        ? existing.gallery.map((url) => ({ url }))
+        : [],
     };
     await productApi.updateProduct(id, request);
     return true;
