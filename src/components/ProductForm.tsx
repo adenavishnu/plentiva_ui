@@ -1,6 +1,7 @@
 "use client";
 
 import { Product } from "@/types";
+import { Category } from "@/types";
 import { FormEvent, useState, useEffect } from "react";
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { fetchCategories } from '@/store/categoriesSlice';
@@ -65,27 +66,51 @@ export default function ProductForm({ onSubmit, isLoading = false, initialData, 
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
     if (!formData.name || !formData.description || !formData.price) {
       alert("Please fill in all required fields");
       return;
     }
 
-    // Get thumbnail URL from MediaUploader
-    const thumbnailUrl = thumbnail && thumbnail.length > 0 ? thumbnail[0].url : "/products/default.svg";
-    
-    // Get gallery URLs from MediaUploader
-    const galleryUrls = gallery && gallery.length > 0 ? gallery.map(img => img.url) : [];
+    // Find the selected category object
+    const selectedCategory: Category | undefined = categories.find(
+      (cat) => cat.name === formData.category
+    );
+    if (!selectedCategory) {
+      alert("Please select a valid category");
+      return;
+    }
 
-    onSubmit({
-      name: formData.name,
+    // Build ImageRef for thumbnail
+    const thumbnailObj = thumbnail && thumbnail.length > 0
+      ? {
+          imageId: undefined,
+          fileName: thumbnail[0].name,
+          url: thumbnail[0].url,
+        }
+      : undefined;
+
+    // Build ImageRef[] for gallery
+    const galleryObjs = gallery && gallery.length > 0
+      ? gallery.map((img) => ({
+          imageId: undefined,
+          fileName: img.name,
+          url: img.url,
+        }))
+      : undefined;
+
+    // Compose backend-compatible ProductRequest
+    const productRequest = {
+      productName: formData.name,
       description: formData.description,
       price: parseFloat(formData.price),
-      category: formData.category,
-      image: thumbnailUrl,
-      stock: parseInt(formData.stock) || 0,
-      gallery: galleryUrls.length > 0 ? galleryUrls : undefined,
-    });
+      category: selectedCategory,
+      thumbnail: thumbnailObj,
+      productGallery: galleryObjs,
+      quantity: parseInt(formData.stock) || 0,
+    };
+
+    // @ts-ignore: onSubmit expects Omit<Product, 'id'>, but backend expects ProductRequest
+    onSubmit(productRequest);
 
     // Reset form
     setFormData({

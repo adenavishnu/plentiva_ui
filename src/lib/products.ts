@@ -14,15 +14,17 @@ const USE_BACKEND_API = process.env.NEXT_PUBLIC_USE_PRODUCT_API === "true";
 export async function getAllProductsFromAPI(): Promise<Product[]> {
   try {
     const products = await productApi.getAllProducts();
-    return products.map(p => ({
+    return products.map((p: any) => ({
       id: p.id,
-      name: p.name,
+      name: p.productName ?? p.name,
       description: p.description,
       price: p.price,
-      image: p.image,
-      category: p.category,
-      stock: p.stock,
-      gallery: p.gallery,
+      image: p.thumbnail?.url ?? p.image,
+      category: p.category?.name ?? p.category ?? p.categoryId,
+      stock: p.quantity ?? p.stock,
+      gallery: Array.isArray(p.productGallery)
+        ? p.productGallery.map((img: any) => img.url)
+        : p.gallery,
     }));
   } catch (error) {
     console.error("Failed to fetch products from API:", error);
@@ -35,16 +37,18 @@ export async function getAllProductsFromAPI(): Promise<Product[]> {
  */
 export async function getProductByIdFromAPI(id: string): Promise<Product | null> {
   try {
-    const product = await productApi.getProductById(id);
+    const p = await productApi.getProductById(id);
     return {
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      image: product.image,
-      category: product.category,
-      stock: product.stock,
-      gallery: product.gallery,
+      id: p.id,
+      name: p.productName ?? p.name,
+      description: p.description,
+      price: p.price,
+      image: p.thumbnail?.url ?? p.image,
+      category: p.category?.name ?? p.category ?? p.categoryId,
+      stock: p.quantity ?? p.stock,
+      gallery: Array.isArray(p.productGallery)
+        ? p.productGallery.map((img: any) => img.url)
+        : p.gallery,
     };
   } catch (error) {
     console.error("Failed to fetch product from API:", error);
@@ -55,29 +59,20 @@ export async function getProductByIdFromAPI(id: string): Promise<Product | null>
 /**
  * Create a product via backend API
  */
-export async function createProductViaAPI(product: Omit<Product, "id">): Promise<Product | null> {
+export async function createProductViaAPI(product: any): Promise<any | null> {
   try {
-    const request: ProductRequest = {
-      name: product.name,
-      description: product.description,
+    // Build payload matching backend DTO
+    const request = {
+      productName: product.productName || product.name,
       price: product.price,
-      image: product.image,
-      category: product.category,
-      stock: product.stock,
-      gallery: product.gallery,
+      categoryId: product.categoryId || product.category?.id || product.category,
+      quantity: product.quantity || product.stock,
+      description: product.description,
+      thumbnail: product.thumbnail || (product.image ? { url: product.image } : undefined),
+      productGallery: product.productGallery || (product.gallery ? product.gallery.map((url: string) => ({ url })) : undefined),
     };
-    
     const created = await productApi.createProduct(request);
-    return {
-      id: created.id,
-      name: created.name,
-      description: created.description,
-      price: created.price,
-      image: created.image,
-      category: created.category,
-      stock: created.stock,
-      gallery: created.gallery,
-    };
+    return created;
   } catch (error) {
     console.error("Failed to create product via API:", error);
     return null;
@@ -87,20 +82,20 @@ export async function createProductViaAPI(product: Omit<Product, "id">): Promise
 /**
  * Update a product via backend API
  */
-export async function updateProductViaAPI(id: string, updates: Partial<Omit<Product, "id">>): Promise<boolean> {
+export async function updateProductViaAPI(id: string, updates: any): Promise<boolean> {
   try {
     // Fetch the existing product first to ensure all fields are present
     const allProducts = await getAllProductsFromAPI();
     const existing = allProducts.find(p => p.id === id);
     if (!existing) throw new Error("Product not found");
-    const request: ProductRequest = {
-      name: updates.name ?? existing.name,
-      description: updates.description ?? existing.description,
+    const request = {
+      productName: updates.productName ?? updates.name ?? existing.name,
       price: updates.price ?? existing.price,
-      image: updates.image ?? existing.image,
-      category: updates.category ?? existing.category,
-      stock: updates.stock ?? existing.stock,
-      gallery: updates.gallery ?? existing.gallery,
+      categoryId: updates.categoryId ?? updates.category?.id ?? existing.category?.id ?? existing.category,
+      quantity: updates.quantity ?? updates.stock ?? existing.stock,
+      description: updates.description ?? existing.description,
+      thumbnail: updates.thumbnail || (updates.image ? { url: updates.image } : existing.image ? { url: existing.image } : undefined),
+      productGallery: updates.productGallery || (updates.gallery ? updates.gallery.map((url: string) => ({ url })) : existing.gallery ? existing.gallery.map((url: string) => ({ url })) : undefined),
     };
     await productApi.updateProduct(id, request);
     return true;
